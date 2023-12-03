@@ -31,6 +31,8 @@ L298N motor(ENB, IN3, IN4);
 
 void setup() {
   // put your setup code here, to run once:
+  depart = false;
+  k = 0;
   Serial.begin(9600);
   pinMode(ch1,INPUT);
   pinMode(ch2,INPUT);
@@ -43,9 +45,9 @@ void setup() {
 
 void grainerouge() {
     myservo.attach(pinTri);
-    pos = 1220;
+    pos = 1300;
     myservo.writeMicroseconds(pos);   // tell servo to go to position in variable 'pos'
-    delay(700);     // waits 15ms for the servo to reach the position
+    delay(850);     // waits 15ms for the servo to reach the position
     pos = 1850;
     myservo.writeMicroseconds(pos);              // tell servo to go to position in variable 'pos'
     //Serial.println(pos);
@@ -58,7 +60,7 @@ void graineblanche() {
     myservo2.attach(pinTri2);
     pos = 1300;
     myservo2.writeMicroseconds(pos);   // tell servo to go to position in variable 'pos'
-    delay(950);     // waits 15ms for the servo to reach the position
+    delay(850);     // waits 15ms for the servo to reach the position
     pos = 1850;
     myservo2.writeMicroseconds(pos);              // tell servo to go to position in variable 'pos'
     //Serial.println(pos);
@@ -69,11 +71,13 @@ void graineblanche() {
 
 void moteur(int x){
   if (x <= -5) {
+    depart = true;
     x = x - 20;
     motor.setSpeed(-1*x);
     motor.backward();
   }
   else if (x >= 5) {
+    depart = true;
     x = x + 20;
     motor.setSpeed(x);
     motor.forward();
@@ -86,7 +90,8 @@ void moteur(int x){
 void loop() {
   // DIRECTION AVEC UNE VALUE DE 950 A 1900 CHANGER EN ANGLE DE 142 A 52 DEGRÉ CAR IL EST DÉSAXER DE 7 DEGRÉ
   direction = pulseIn(ch1,HIGH);
-  if (direction >= 800){
+  //Serial.println(direction);
+  if (direction >= 950 && direction <= 1900){
     int valeurDIR = map(direction, 950, 1900, 142, 52);
     if (valeurDIR >= 52 && valeurDIR <= 142){
       if (valeurDIR >= 92 && valeurDIR <= 102){
@@ -97,17 +102,20 @@ void loop() {
       }
     }
   }
+  
 
   // TRACTION AVANT AVEC UNE VALUE DE 1000 A 1900 CHANGER EN PWM DE -155 A 155, SI LA VALEUR
   // EST IMMOBILE, ACTIVE LES BUTTONS SINON LE IF / ELSE ACTIVE LE MOTEUR PLUS BAS
   throttle = pulseIn(ch2,HIGH);
+  //Serial.println(throttle);
   valeur = map(throttle, 1000, 1990, -155, 155);
   // IF / ELSE
   if (valeur >= -5 && valeur <= 5 && depart == true){
     motor.stop();
-    int reading1 = pulseIn(ch3, HIGH);
+    int reading1 = pulseIn(ch3,LOW);
+    Serial.println(reading1);
     // GRAINE ROUGE SELON LA VALEUR DE READING1 QUI CORRESPOND AU CH3
-    if (reading1 >= 900 && reading1 <= 1000){
+    if (reading1 >= 11200 && reading1 <= 11400){
       state = true;
       if (state == lastState && k > 0){
         grainerouge();
@@ -115,7 +123,7 @@ void loop() {
         lastState = false;
       }
       }
-    if (reading1 >= 1850 && reading1 <= 1950){
+    if (reading1 >= 12200 && reading1 <= 12400){
       k += 1;
       state = false;
       if (state == lastState){
@@ -137,7 +145,6 @@ void loop() {
   }
   // TRACTION AVANT AVEC LA FONCTION MOTEUR QUI FAIT AVANCER OU RECULER
   else if (valeur >= -155 && valeur <= 155){
-    depart = true;
-     moteur(valeur);
+    moteur(valeur);
   }
 }
